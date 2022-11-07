@@ -23,10 +23,14 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     // MARK: - Properties
     @IBOutlet weak var previewMetalView: PreviewMetalView!
     @IBOutlet weak var debugLabel: UILabel!
+    @IBOutlet weak var filterSwitch: UISwitch!
     
     // MARK: - Vision + CoreML
     private lazy var model = { return try! BackgroundRemover_ImageType().model }()
-    private var visionRequest: VNCoreMLRequest!
+    private var visionRequest: VNCoreMLRequest?
+    
+    // MARK: - Image processing
+    private var filter = WhiteningAndSmoothEffect()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -36,6 +40,8 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         session.startRunning()
         
         createTextureCache()
+        
+        setupModel()
     }
 
     func setupCaptureSession() {
@@ -90,7 +96,7 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     func setupModel() {
         if let visionModel = try? VNCoreMLModel(for: model) {
             visionRequest = VNCoreMLRequest(model: visionModel)
-            visionRequest.imageCropAndScaleOption = .scaleFill
+            visionRequest?.imageCropAndScaleOption = .scaleFill
         } else {
             fatalError()
         }
@@ -103,10 +109,44 @@ extension ViewController {
             return
         }
         
+        guard let backgroundTexture = createImageTexture(previewPixelBuffer: previewPixelBuffer) else {
+            return
+        }
+        
+        if filterSwitch.isOn {
+            // CoreML inference
+            let imageHandler = VNImageRequestHandler(cvPixelBuffer: previewPixelBuffer, options: [:])
+            guard let visionRequest = visionRequest else {
+                return
+            }
+            
+            try? imageHandler.perform([visionRequest])
+            guard let observations = visionRequest.results as? [VNCoreMLFeatureValueObservation] else {
+                return
+            }
+            var outputMask: MLMultiArray?
+            for obs in observations {
+                if obs.featureName == "output_mask" {
+                    outputMask = obs.featureValue.multiArrayValue
+                }
+            }
+            guard let unwrappedOutputMask = outputMask else { return }
+            
+            // Metal effect
+            if let maskTexture = outputMaskToTexture(outputMask: unwrappedOutputMask),
+               let processedTexture = filter.process(backgroundTexture: backgroundTexture, maskTexture: maskTexture) {
+                previewMetalView.currentTexture = processedTexture
+            } else {
+                previewMetalView.currentTexture = backgroundTexture
+            }
+        } else {
+            previewMetalView.currentTexture = backgroundTexture
+        }
+    }
+    
+    private func createImageTexture(previewPixelBuffer: CVPixelBuffer) -> MTLTexture? {
         let width = CVPixelBufferGetWidth(previewPixelBuffer)
         let height = CVPixelBufferGetHeight(previewPixelBuffer)
-        
-        debugLabel.text = "width=\(width), height=\(height)"
         
         var cvTextureOut: CVMetalTexture?
         CVMetalTextureCacheCreateTextureFromImage(kCFAllocatorDefault,
@@ -119,9 +159,33 @@ extension ViewController {
                                                   0,
                                                   &cvTextureOut)
         guard let cvTexture = cvTextureOut, let texture = CVMetalTextureGetTexture(cvTexture) else {
-            return
+            return nil
+        }
+        return texture
+    }
+    
+    private func outputMaskToTexture(outputMask: MLMultiArray) -> MTLTexture? {
+        let maskHeight = outputMask.shape[2] as! Int
+        let maskWidth = outputMask.shape[3] as! Int
+        var skinMask = [UInt8](repeating: 0, count: maskWidth * maskHeight * 4)
+        for row in 0..<maskHeight {
+            for col in 0..<maskWidth {
+                let key = [0, 0, row, col] as [NSNumber]
+                let val = outputMask[key] as! Float32
+                if val > 0.8 {
+                    skinMask[(row * maskWidth + col) * 4] = 255
+                    skinMask[(row * maskWidth + col) * 4 + 1] = 255
+                    skinMask[(row * maskWidth + col) * 4 + 2] = 255
+                    skinMask[(row * maskWidth + col) * 4 + 3] = 255
+                }
+            }
         }
         
-        previewMetalView.currentTexture = texture
+        let maskTextureDescriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .bgra8Unorm, width: maskWidth, height: maskHeight, mipmapped: false)
+        maskTextureDescriptor.usage = [.shaderRead, .shaderWrite, .renderTarget]
+        let maskTexture = metalDevice.makeTexture(descriptor: maskTextureDescriptor)
+        let region = MTLRegionMake2D(0, 0, maskWidth, maskHeight)
+        maskTexture?.replace(region: region, mipmapLevel: 0, withBytes: skinMask, bytesPerRow: maskWidth * 4)
+        return maskTexture
     }
 }

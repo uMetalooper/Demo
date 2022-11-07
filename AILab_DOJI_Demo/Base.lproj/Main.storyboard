@@ -18,6 +18,12 @@
                         <subviews>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Z8u-JM-Qqz" customClass="PreviewMetalView" customModule="AILab_DOJI_Demo" customModuleProvider="target">
                                 <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
+                                <subviews>
+                                    <switch opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" on="YES" translatesAutoresizingMaskIntoConstraints="NO" id="CHt-at-88I">
+                                        <rect key="frame" x="0.0" y="150" width="49" height="31"/>
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                    </switch>
+                                </subviews>
                                 <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                             </view>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="5" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="hGG-xL-etP" userLabel="Debug Label">
@@ -44,6 +50,7 @@
                     </view>
                     <connections>
                         <outlet property="debugLabel" destination="hGG-xL-etP" id="wCg-yf-ZtW"/>
+                        <outlet property="filterSwitch" destination="CHt-at-88I" id="wDz-Ta-jqV"/>
                         <outlet property="previewMetalView" destination="Z8u-JM-Qqz" id="TGR-uw-6nZ"/>
                     </connections>
                 </viewController>

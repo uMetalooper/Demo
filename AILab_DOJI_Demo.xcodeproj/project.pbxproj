@@ -16,6 +16,8 @@
 		7FB159AC2917245600D103AB /* PreviewMetalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FB159AB2917245600D103AB /* PreviewMetalView.swift */; };
 		7FB159AF2917266400D103AB /* PassThrough.metal in Sources */ = {isa = PBXBuildFile; fileRef = 7FB159AE2917266400D103AB /* PassThrough.metal */; };
 		7FB159B729191BE200D103AB /* BackgroundRemover_ImageType.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 7FB159B629191BE200D103AB /* BackgroundRemover_ImageType.mlmodel */; };
+		7FB159BA29192B9C00D103AB /* WhiteningAndSmoothEffect.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FB159B929192B9C00D103AB /* WhiteningAndSmoothEffect.swift */; };
+		7FB159BD29192BB000D103AB /* Effect.metal in Sources */ = {isa = PBXBuildFile; fileRef = 7FB159BC29192BB000D103AB /* Effect.metal */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -30,6 +32,8 @@
 		7FB159AB2917245600D103AB /* PreviewMetalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewMetalView.swift; sourceTree = "<group>"; };
 		7FB159AE2917266400D103AB /* PassThrough.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = PassThrough.metal; sourceTree = "<group>"; };
 		7FB159B629191BE200D103AB /* BackgroundRemover_ImageType.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = BackgroundRemover_ImageType.mlmodel; sourceTree = "<group>"; };
+		7FB159B929192B9C00D103AB /* WhiteningAndSmoothEffect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhiteningAndSmoothEffect.swift; sourceTree = "<group>"; };
+		7FB159BC29192BB000D103AB /* Effect.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Effect.metal; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -65,6 +69,8 @@
 				7FB159B629191BE200D103AB /* BackgroundRemover_ImageType.mlmodel */,
 				7FB159AB2917245600D103AB /* PreviewMetalView.swift */,
 				7FB159AE2917266400D103AB /* PassThrough.metal */,
+				7FB159B929192B9C00D103AB /* WhiteningAndSmoothEffect.swift */,
+				7FB159BC29192BB000D103AB /* Effect.metal */,
 				7FB1599629171CED00D103AB /* AppDelegate.swift */,
 				7FB1599829171CED00D103AB /* SceneDelegate.swift */,
 				7FB1599A29171CED00D103AB /* ViewController.swift */,
@@ -148,7 +154,9 @@
 			files = (
 				7FB1599B29171CED00D103AB /* ViewController.swift in Sources */,
 				7FB159AC2917245600D103AB /* PreviewMetalView.swift in Sources */,
+				7FB159BD29192BB000D103AB /* Effect.metal in Sources */,
 				7FB1599729171CED00D103AB /* AppDelegate.swift in Sources */,
+				7FB159BA29192B9C00D103AB /* WhiteningAndSmoothEffect.swift in Sources */,
 				7FB159B729191BE200D103AB /* BackgroundRemover_ImageType.mlmodel in Sources */,
 				7FB159AF2917266400D103AB /* PassThrough.metal in Sources */,
 				7FB1599929171CED00D103AB /* SceneDelegate.swift in Sources */,
