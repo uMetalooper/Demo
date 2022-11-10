@@ -115,26 +115,27 @@ extension ViewController {
         
         if filterSwitch.isOn {
             // CoreML inference
-            let imageHandler = VNImageRequestHandler(cvPixelBuffer: previewPixelBuffer, options: [:])
-            guard let visionRequest = visionRequest else {
-                return
-            }
-            
-            try? imageHandler.perform([visionRequest])
-            guard let observations = visionRequest.results as? [VNCoreMLFeatureValueObservation] else {
-                return
-            }
-            var outputMask: MLMultiArray?
-            for obs in observations {
-                if obs.featureName == "output_mask" {
-                    outputMask = obs.featureValue.multiArrayValue
-                }
-            }
-            guard let unwrappedOutputMask = outputMask else { return }
+//            let imageHandler = VNImageRequestHandler(cvPixelBuffer: previewPixelBuffer, options: [:])
+//            guard let visionRequest = visionRequest else {
+//                return
+//            }
+//
+//            try? imageHandler.perform([visionRequest])
+//            guard let observations = visionRequest.results as? [VNCoreMLFeatureValueObservation] else {
+//                return
+//            }
+//            var outputMask: MLMultiArray?
+//            for obs in observations {
+//                if obs.featureName == "output_mask" {
+//                    outputMask = obs.featureValue.multiArrayValue
+//                }
+//            }
+//            guard let unwrappedOutputMask = outputMask else { return }
             
             // Metal effect
-            if let maskTexture = outputMaskToTexture(outputMask: unwrappedOutputMask),
-               let processedTexture = filter.process(backgroundTexture: backgroundTexture, maskTexture: maskTexture) {
+            // if let maskTexture = outputMaskToTexture(outputMask: unwrappedOutputMask),
+            
+            if let processedTexture = filter.process(backgroundTexture: backgroundTexture) {
                 previewMetalView.currentTexture = processedTexture
             } else {
                 previewMetalView.currentTexture = backgroundTexture

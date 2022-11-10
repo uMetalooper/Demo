@@ -35,5 +35,5 @@ fragment half4 fragmentEffect(VertexIO         inputFragment [[ stage_in ]],
 
     half4 brightColor = clamp(blurredColor + 0.1, 0.0, 1.0);
 
-    return half4(mix(bgColor.rgb, brightColor.rgb, maskColor.r), bgColor.a);
+    return half4(mix(bgColor.rgb, brightColor.rgb, 1-maskColor.r), bgColor.a);
 }

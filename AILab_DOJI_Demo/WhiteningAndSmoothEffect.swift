@@ -18,7 +18,15 @@ class WhiteningAndSmoothEffect {
     
     private var sampler: MTLSamplerState!
     
-    private var mpsImageGaussianBlur: MPSImageGaussianBlur!
+    private var mpsImageGaussianBlurImage: MPSImageGaussianBlur!
+    private var mpsImageGaussianBlurSobel: MPSImageGaussianBlur!
+    
+    private var mpsImageSobel: MPSImageSobel!
+    
+    let blurredTexture: MTLTexture
+    let maskTexture: MTLTexture
+    let blurredMaskTexture: MTLTexture
+    let outputTexture: MTLTexture
     
     init() {
         if let metalDevice = MTLCreateSystemDefaultDevice() {
@@ -67,19 +75,43 @@ class WhiteningAndSmoothEffect {
                                                length: textData.count * MemoryLayout<Float>.size,
                                                options: [])
         
-        mpsImageGaussianBlur = MPSImageGaussianBlur(device: device, sigma: 3.0)
+        mpsImageGaussianBlurImage = MPSImageGaussianBlur(device: device, sigma: 5.0)
+        mpsImageGaussianBlurSobel = MPSImageGaussianBlur(device: device, sigma: 1.0)
+        
+        let linearGrayColorTransform: [Float] = [ 0.22, 0.72, 0.072 ]
+        mpsImageSobel = MPSImageSobel(device: device, linearGrayColorTransform: linearGrayColorTransform)
+        
+        let textureDescriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .bgra8Unorm, width: 1080, height: 1920, mipmapped: false)
+        textureDescriptor.usage = [.shaderRead, .shaderWrite, .renderTarget]
+        guard let texture = device.makeTexture(descriptor: textureDescriptor) else {
+            fatalError()
+        }
+        blurredTexture = texture
+        guard let texture2 = device.makeTexture(descriptor: textureDescriptor) else {
+            fatalError()
+        }
+        maskTexture    = texture2
+        guard let texture3 = device.makeTexture(descriptor: textureDescriptor) else {
+            fatalError()
+        }
+        blurredMaskTexture = texture3
+        guard let texture4 = device.makeTexture(descriptor: textureDescriptor) else {
+            fatalError()
+        }
+        outputTexture = texture4
     }
     
-    func process(backgroundTexture: MTLTexture, maskTexture: MTLTexture) -> MTLTexture? {
-        let blurredTexture = makeTexture(width: backgroundTexture.width, height: backgroundTexture.height)
-        let outputTexture = makeTexture(width: backgroundTexture.width, height: backgroundTexture.height)
-        
+    func process(backgroundTexture: MTLTexture) -> MTLTexture? {
         guard let commandQueue = commandQueue,
-              let commandBufferBlur = commandQueue.makeCommandBuffer() else {
+              let commandBuffer = commandQueue.makeCommandBuffer() else {
             fatalError("Cannot create command buffer!")
         }
-        mpsImageGaussianBlur.encode(commandBuffer: commandBufferBlur, sourceTexture: backgroundTexture, destinationTexture: blurredTexture)
-        commandBufferBlur.commit()
+        
+        mpsImageGaussianBlurImage.encode(commandBuffer: commandBuffer, sourceTexture: backgroundTexture, destinationTexture: blurredTexture)
+        
+        mpsImageSobel.encode(commandBuffer: commandBuffer, sourceTexture: backgroundTexture, destinationTexture: maskTexture)
+        
+        mpsImageGaussianBlurSobel.encode(commandBuffer: commandBuffer, sourceTexture: maskTexture, destinationTexture: blurredMaskTexture)
         
         let renderPassDescriptor = MTLRenderPassDescriptor()
         let attachment = renderPassDescriptor.colorAttachments[0]
@@ -87,10 +119,6 @@ class WhiteningAndSmoothEffect {
         attachment?.texture = outputTexture
         attachment?.loadAction = .clear
         attachment?.storeAction = .store
-        
-        guard let commandBuffer = commandQueue.makeCommandBuffer() else {
-            fatalError("Failed to create Metal command buffer")
-        }
         
         guard let commandEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor) else {
             fatalError("Failed to create Metal command encoder")
@@ -102,7 +130,7 @@ class WhiteningAndSmoothEffect {
         commandEncoder.setVertexBuffer(textureCoordBuffer, offset: 0, index: 1)
         commandEncoder.setFragmentTexture(backgroundTexture, index: 0)
         commandEncoder.setFragmentTexture(blurredTexture, index: 1)
-        commandEncoder.setFragmentTexture(maskTexture, index: 2)
+        commandEncoder.setFragmentTexture(blurredMaskTexture, index: 2)
         commandEncoder.setFragmentSamplerState(sampler, index: 0)
         commandEncoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 4)
         commandEncoder.endEncoding()
@@ -112,7 +140,7 @@ class WhiteningAndSmoothEffect {
         return outputTexture
     }
     
-    func makeTexture(width: Int, height: Int) -> MTLTexture {
+    public func makeTexture(width: Int, height: Int) -> MTLTexture {
         let textureDescriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .bgra8Unorm, width: width, height: height, mipmapped: false)
         textureDescriptor.usage = [.shaderRead, .shaderWrite, .renderTarget]
         guard let texture = device.makeTexture(descriptor: textureDescriptor) else {
