@@ -68,7 +68,7 @@ public class PreviewMetalView: MTKView {
             heightRatio = 1.0
         }
         
-        var shiftX = (widthRatio - 1) / (2 * widthRatio)
+        let shiftX = (widthRatio - 1) / (2 * widthRatio)
         let shiftY = (heightRatio - 1) / (2 * heightRatio)
         
         let textData: [Float] = [
@@ -105,6 +105,7 @@ public class PreviewMetalView: MTKView {
             commandEncoder.setVertexBuffer(vertexCoordBuffer, offset: 0, index: 0)
             commandEncoder.setVertexBuffer(textureCoordBuffer, offset: 0, index: 1)
             commandEncoder.setFragmentTexture(imageTexture, index: 0)
+            commandEncoder.setFragmentSamplerState(sampler, index: 0)
             commandEncoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 4)
 
             commandEncoder.endEncoding()
